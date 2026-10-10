@@ -85,24 +85,40 @@
 
         <div class="grow basis-[0%]"></div>
 
-        {{-- Profile Footer --}}
-        <div class="flex items-center pt-4.5 gap-2.5 px-2 border-t border-t-solid border-t-[#DDE6ED2E]">
-          <div class="flex items-center justify-center shrink-0 rounded-[18px] bg-[#D1F0ED] size-9">
-            <div class="flex font-['Inter',system-ui,sans-serif] font-bold text-[#125A6B] text-[13px]/4.5">
-              FP
+        <div class="relative" x-data="{ open: false }">
+          <div @click="open = !open" class="flex items-center pt-4.5 gap-2.5 px-2 border-t border-t-solid border-t-[#DDE6ED2E] cursor-pointer select-none hover:opacity-90 transition-opacity">
+            <div class="flex items-center justify-center shrink-0 rounded-[18px] bg-[#D1F0ED] size-9">
+              <div class="flex font-['Inter',system-ui,sans-serif] font-bold text-[#125A6B] text-[13px]/4.5">
+                {{ Auth::check() ? strtoupper(substr(Auth::user()->name, 0, 1)) . strtoupper(substr(Auth::user()->name, strpos(Auth::user()->name, ' ') + 1, 1)) : 'RV' }}
+              </div>
             </div>
+            <div class="flex flex-col grow basis-[0%] gap-0.5">
+              <div class="font-['Inter',system-ui,sans-serif] font-semibold text-white text-[13px]/4.5">
+                {{ Auth::check() ? Auth::user()->name : 'Reviewer' }}
+              </div>
+              <div class="font-['Inter',system-ui,sans-serif] text-[#AFC2D0] text-xs/4">
+                Reviewer
+              </div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;" class="transition-transform duration-200" :class="open ? 'rotate-180' : ''">
+              <polyline points="6 9 12 15 18 9" fill="none" stroke="#AFC2D0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
           </div>
-          <div class="flex flex-col grow basis-[0%] gap-0.5">
-            <div class="font-['Inter',system-ui,sans-serif] font-semibold text-white text-[13px]/4.5">
-              Fajar Pranoto
-            </div>
-            <div class="font-['Inter',system-ui,sans-serif] text-[#AFC2D0] text-xs/4">
-              Reviewer
-            </div>
+
+          <!-- Dropdown Menu -->
+          <div x-show="open" x-collapse @click.outside="open = false" class="mt-1.5 overflow-hidden">
+            <form action="{{ route('logout') }}">
+              @csrf
+              <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left hover:bg-[#1D4C63] transition-colors cursor-pointer">
+                <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  <polyline points="16 17 21 12 16 7" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  <line x1="21" y1="12" x2="9" y2="12" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="font-['Inter',system-ui,sans-serif] font-medium text-[#F87171] text-[13px]/4.5">Logout</span>
+              </button>
+            </form>
           </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
-            <polyline points="6 9 12 15 18 9" fill="none" stroke="#AFC2D0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
         </div>
     </aside>
 

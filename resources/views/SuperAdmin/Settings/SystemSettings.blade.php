@@ -74,112 +74,129 @@
             </div>
             
             <!-- Main Card Content -->
-            <div id="tab-profil" class="tab-content flex flex-col grow min-h-0 rounded-[14px] overflow-hidden bg-white border border-solid border-[#DDE6ED]">
-              
-              <div class="flex flex-col pt-[22px] pb-[18px] gap-[5px] px-6 border-b border-b-solid border-b-[#EDF2F5]">
-                <div class="tracking-[-0.015em] font-['Inter',system-ui,sans-serif] font-bold text-[#102A43] text-lg/6">
-                  Profil perusahaan
+            <div id="tab-profil" x-data="companyProfileForm(@js($company))" class="tab-content flex flex-col grow min-h-0 rounded-[14px] overflow-hidden bg-white border border-solid border-[#DDE6ED]">
+              <form @submit.prevent="submit" enctype="multipart/form-data" class="flex flex-col grow min-h-0">
+                <div class="flex flex-col pt-[22px] pb-[18px] gap-[5px] px-6 border-b border-b-solid border-b-[#EDF2F5]">
+                  <div class="tracking-[-0.015em] font-['Inter',system-ui,sans-serif] font-bold text-[#102A43] text-lg/6">
+                    Profil perusahaan
+                  </div>
+                  <div class="font-['Inter',system-ui,sans-serif] text-[#62798A] text-[13px]/4.75">
+                    Informasi ini digunakan pada undangan kandidat dan laporan asesmen.
+                  </div>
                 </div>
-                <div class="font-['Inter',system-ui,sans-serif] text-[#62798A] text-[13px]/4.75">
-                  Informasi ini digunakan pada undangan kandidat dan laporan asesmen.
+
+                <!-- Toast Notification -->
+                <div x-show="toast.show" x-transition.opacity style="display: none;"
+                     class="mx-6 mt-4 flex items-start gap-3 px-4 py-3 rounded-[10px] border border-solid"
+                     :class="toast.type === 'success' ? 'bg-[#E7F6EE] border-[#BFE5CF] text-[#19734A]' : 'bg-[#FEF2F2] border-[#FBD5D5] text-[#C53030]'">
+                  <span class="font-['Inter',system-ui,sans-serif] text-[13px]/5 font-medium" x-text="toast.message"></span>
                 </div>
-              </div>
-              
-              <div class="flex flex-col py-5 px-6 gap-[18px] grow overflow-y-auto min-h-0">
-                
-                <div class="h-[76px] flex items-center py-3 px-[14px] rounded-[11px] gap-[14px] shrink-0 bg-[#FAFCFD] border border-dashed border-[#B5C8D4]">
-                  <div class="w-[50px] h-[50px] flex items-center justify-center shrink-0 rounded-[13px] bg-[#147D92]">
-                    <div class="flex font-['Inter',system-ui,sans-serif] font-extrabold text-white text-[21px]/6.5">
-                      V
+
+                <div class="flex flex-col py-5 px-6 gap-[18px] grow overflow-y-auto min-h-0">
+
+                  <div class="h-[76px] flex items-center py-3 px-[14px] rounded-[11px] gap-[14px] shrink-0 bg-[#FAFCFD] border border-dashed border-[#B5C8D4]">
+                    <div class="w-[50px] h-[50px] flex items-center justify-center shrink-0 rounded-[13px] bg-[#147D92] overflow-hidden">
+                      <template x-if="logoPreview">
+                        <img :src="logoPreview" class="w-full h-full object-cover" alt="Logo Perusahaan">
+                      </template>
+                      <template x-if="!logoPreview">
+                        <div class="flex font-['Inter',system-ui,sans-serif] font-extrabold text-white text-[21px]/6.5" x-text="initialLetter"></div>
+                      </template>
+                    </div>
+                    <div class="flex flex-col grow basis-[0%] gap-1">
+                      <div class="font-['Inter',system-ui,sans-serif] font-[650] [font-variation-settings:'wght'_650] text-[#314E60] text-[13px]/4.5">
+                        Logo perusahaan
+                      </div>
+                      <div class="font-['Inter',system-ui,sans-serif] text-[#7890A0] text-xs/4">
+                        PNG, JPG, atau SVG · Maks. 2 MB
+                      </div>
+                    </div>
+                    <input type="file" x-ref="logoInput" @change="handleLogoChange" accept="image/png, image/jpeg, image/jpg, image/svg+xml" class="hidden">
+                    <button type="button" @click="$refs.logoInput.click()" class="h-[34px] flex items-center shrink-0 px-[11px] rounded-lg bg-white border border-solid border-[#DDE6ED] cursor-pointer hover:bg-gray-50 transition-colors">
+                      <div class="flex font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                        Unggah logo
+                      </div>
+                    </button>
+                  </div>
+
+                  <div class="flex gap-4">
+                    <div class="flex flex-col grow basis-[0%] gap-[7px]">
+                      <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                        Nama perusahaan
+                      </label>
+                      <input type="text" x-model="form.company_name" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
+                    </div>
+                    <div class="flex flex-col grow basis-[0%] gap-[7px]">
+                      <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                        Email perusahaan
+                      </label>
+                      <input type="email" x-model="form.email" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
                     </div>
                   </div>
-                  <div class="flex flex-col grow basis-[0%] gap-1">
-                    <div class="font-['Inter',system-ui,sans-serif] font-[650] [font-variation-settings:'wght'_650] text-[#314E60] text-[13px]/4.5">
-                      Logo perusahaan
+
+                  <div class="flex gap-4">
+                    <div class="flex flex-col grow basis-[0%] gap-[7px]">
+                      <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                        Nomor telepon
+                      </label>
+                      <input type="text" x-model="form.phone" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
                     </div>
-                    <div class="font-['Inter',system-ui,sans-serif] text-[#7890A0] text-xs/4">
-                      PNG, JPG, atau SVG · Maks. 2 MB
+                    <div class="flex flex-col grow basis-[0%] gap-[7px]">
+                      <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                        Zona waktu
+                      </label>
+                      <div class="relative h-10 w-full shrink-0">
+                        <select x-model="form.timezone" class="appearance-none h-10 w-full pl-3 pr-10 rounded-[9px] border border-solid border-[#DDE6ED] bg-white cursor-pointer hover:bg-gray-50 transition-colors font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92]">
+                          <option value="Asia/Jakarta">(GMT+07:00) Asia/Jakarta</option>
+                          <option value="Asia/Makassar">(GMT+08:00) Asia/Makassar</option>
+                          <option value="Asia/Jayapura">(GMT+09:00) Asia/Jayapura</option>
+                        </select>
+                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0">
+                          <polyline points="6 9 12 15 18 9" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                  <button class="h-[34px] flex items-center shrink-0 px-[11px] rounded-lg bg-white border border-solid border-[#DDE6ED] cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div class="flex font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                      Unggah logo
+
+                  <div class="flex flex-col gap-[7px]">
+                    <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                      Alamat
+                    </label>
+                    <input type="text" x-model="form.address" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
+                  </div>
+
+                  <div class="flex flex-col gap-[7px]">
+                    <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                      Situs web
+                    </label>
+                    <div class="h-10 flex items-center px-3 rounded-[9px] gap-[9px] shrink-0 border border-solid border-[#DDE6ED] focus-within:border-[#147D92] transition-colors overflow-hidden bg-white">
+                      <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0">
+                        <circle cx="12" cy="12" r="9" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M3 12h18" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 3a14 14 0 0 1 0 18" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 3a14 14 0 0 0 0 18" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <input type="url" x-model="form.website" class="font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 bg-transparent border-none outline-none w-full" />
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="h-[68px] flex items-center justify-end px-6 shrink-0 border-t border-t-solid border-t-[#EDF2F5]">
+                  <button type="submit" :disabled="loading" class="h-10 flex items-center px-3.5 rounded-[9px] gap-2 bg-[#147D92] border-none cursor-pointer hover:bg-[#116a7c] transition-colors disabled:opacity-70 disabled:cursor-wait">
+                    <svg x-show="!loading" width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0">
+                      <path d="M20 6 9 17l-5-5" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <svg x-show="loading" style="display: none;" class="animate-spin" width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="9" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="3" />
+                      <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" />
+                    </svg>
+                    <div class="font-['Inter',system-ui,sans-serif] font-[650] [font-variation-settings:'wght'_650] text-white text-[13px]/4.5" x-text="loading ? 'Menyimpan...' : 'Simpan perubahan'">
+                      Simpan perubahan
                     </div>
                   </button>
                 </div>
-                
-                <div class="flex gap-4">
-                  <div class="flex flex-col grow basis-[0%] gap-[7px]">
-                    <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                      Nama perusahaan
-                    </label>
-                    <input type="text" value="Verta Indonesia" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
-                  </div>
-                  <div class="flex flex-col grow basis-[0%] gap-[7px]">
-                    <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                      Email perusahaan
-                    </label>
-                    <input type="email" value="hello@verta.co.id" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
-                  </div>
-                </div>
-                
-                <div class="flex gap-4">
-                  <div class="flex flex-col grow basis-[0%] gap-[7px]">
-                    <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                      Nomor telepon
-                    </label>
-                    <input type="text" value="+62 21 555 0188" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
-                  </div>
-                  <div class="flex flex-col grow basis-[0%] gap-[7px]">
-                    <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                      Zona waktu
-                    </label>
-                    <div class="relative h-10 w-full shrink-0">
-                      <select class="appearance-none h-10 w-full pl-3 pr-10 rounded-[9px] border border-solid border-[#DDE6ED] bg-white cursor-pointer hover:bg-gray-50 transition-colors font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92]">
-                        <option value="Asia/Jakarta">(GMT+07:00) Asia/Jakarta</option>
-                      </select>
-                      <svg class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0">
-                        <polyline points="6 9 12 15 18 9" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="flex flex-col gap-[7px]">
-                  <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                    Alamat
-                  </label>
-                  <input type="text" value="Jl. Jenderal Sudirman No. 45, Jakarta Selatan" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
-                </div>
-                
-                <div class="flex flex-col gap-[7px]">
-                  <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                    Situs web
-                  </label>
-                  <div class="h-10 flex items-center px-3 rounded-[9px] gap-[9px] shrink-0 border border-solid border-[#DDE6ED] focus-within:border-[#147D92] transition-colors overflow-hidden bg-white">
-                    <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0">
-                      <circle cx="12" cy="12" r="9" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                      <path d="M3 12h18" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                      <path d="M12 3a14 14 0 0 1 0 18" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                      <path d="M12 3a14 14 0 0 0 0 18" fill="none" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <input type="url" value="https://verta.co.id" class="font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 bg-transparent border-none outline-none w-full" />
-                  </div>
-                </div>
-                
-              </div>
-              
-              <div class="h-[68px] flex items-center justify-end px-6 shrink-0 border-t border-t-solid border-t-[#EDF2F5]">
-                <button class="h-10 flex items-center px-3.5 rounded-[9px] gap-2 bg-[#147D92] border-none cursor-pointer hover:bg-[#116a7c] transition-colors">
-                  <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0">
-                    <path d="M20 6 9 17l-5-5" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  <div class="font-['Inter',system-ui,sans-serif] font-[650] [font-variation-settings:'wght'_650] text-white text-[13px]/4.5">
-                    Simpan perubahan
-                  </div>
-                </button>
-              </div>
-              
+              </form>
             </div>
             
             <!-- Tab Konfigurasi Email -->
@@ -230,55 +247,69 @@
             </div>
 
             <!-- Tab Keamanan & Akses -->
-            <div id="tab-keamanan" class="tab-content hidden flex-col grow min-h-0 rounded-[14px] overflow-hidden bg-white border border-solid border-[#DDE6ED]">
-              <div class="flex flex-col pt-[22px] pb-[18px] gap-[5px] px-6 border-b border-b-solid border-b-[#EDF2F5]">
-                <div class="tracking-[-0.015em] font-['Inter',system-ui,sans-serif] font-bold text-[#102A43] text-lg/6">
-                  Keamanan & akses
-                </div>
-                <div class="font-['Inter',system-ui,sans-serif] text-[#62798A] text-[13px]/4.75">
-                  Kelola kebijakan kata sandi dan pembatasan akses sesi admin.
-                </div>
-              </div>
-              <div class="flex flex-col py-5 px-6 gap-[18px] grow overflow-y-auto min-h-0">
-                <div class="flex gap-4">
-                  <div class="flex flex-col grow basis-[0%] gap-[7px]">
-                    <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                      Durasi kedaluwarsa sesi (menit)
-                    </label>
-                    <input type="number" value="120" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
+            <div id="tab-keamanan" x-data="securitySettingsForm(@js($securitySettings))" class="tab-content hidden flex-col grow min-h-0 rounded-[14px] overflow-hidden bg-white border border-solid border-[#DDE6ED]">
+              <form @submit.prevent="submit" class="flex flex-col grow min-h-0">
+                <div class="flex flex-col pt-[22px] pb-[18px] gap-[5px] px-6 border-b border-b-solid border-b-[#EDF2F5]">
+                  <div class="tracking-[-0.015em] font-['Inter',system-ui,sans-serif] font-bold text-[#102A43] text-lg/6">
+                    Keamanan & akses
                   </div>
-                  <div class="flex flex-col grow basis-[0%] gap-[7px]">
-                    <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
-                      Batas maksimal percobaan login
-                    </label>
-                    <input type="number" value="5" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
+                  <div class="font-['Inter',system-ui,sans-serif] text-[#62798A] text-[13px]/4.75">
+                    Kelola kebijakan kata sandi dan pembatasan akses sesi admin.
                   </div>
                 </div>
-                <div class="flex items-center gap-3 mt-2">
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer" checked>
-                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#147D92]"></div>
-                  </label>
-                  <div class="flex flex-col">
-                    <div class="font-['Inter',system-ui,sans-serif] font-semibold text-[#314E60] text-[13px]/4.5">
-                      Wajibkan kata sandi kuat
+
+                <!-- Toast Notification -->
+                <div x-show="toast.show" x-transition.opacity style="display: none;"
+                     class="mx-6 mt-4 flex items-start gap-3 px-4 py-3 rounded-[10px] border border-solid"
+                     :class="toast.type === 'success' ? 'bg-[#E7F6EE] border-[#BFE5CF] text-[#19734A]' : 'bg-[#FEF2F2] border-[#FBD5D5] text-[#C53030]'">
+                  <span class="font-['Inter',system-ui,sans-serif] text-[13px]/5 font-medium" x-text="toast.message"></span>
+                </div>
+
+                <div class="flex flex-col py-5 px-6 gap-[18px] grow overflow-y-auto min-h-0">
+                  <div class="flex gap-4">
+                    <div class="flex flex-col grow basis-[0%] gap-[7px]">
+                      <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                        Durasi kedaluwarsa sesi (menit)
+                      </label>
+                      <input type="number" min="1" max="1440" x-model.number="form.session_lifetime_minutes" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
                     </div>
-                    <div class="font-['Inter',system-ui,sans-serif] text-[#7890A0] text-xs/4">
-                      Akun baru harus menggunakan kombinasi huruf besar, angka, dan karakter spesial.
+                    <div class="flex flex-col grow basis-[0%] gap-[7px]">
+                      <label class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-xs/4">
+                        Batas maksimal percobaan login
+                      </label>
+                      <input type="number" min="1" max="20" x-model.number="form.max_login_attempts" class="h-10 flex items-center px-3 rounded-[9px] shrink-0 border border-solid border-[#DDE6ED] font-['Inter',system-ui,sans-serif] text-[#314E60] text-[13px]/4.5 outline-none focus:border-[#147D92] w-full" />
                     </div>
                   </div>
-                </div>
-              </div>
-              <div class="h-[68px] flex items-center justify-end px-6 shrink-0 border-t border-t-solid border-t-[#EDF2F5]">
-                <button class="h-10 flex items-center px-3.5 rounded-[9px] gap-2 bg-[#147D92] border-none cursor-pointer hover:bg-[#116a7c] transition-colors">
-                  <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0">
-                    <path d="M20 6 9 17l-5-5" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  <div class="font-['Inter',system-ui,sans-serif] font-[650] [font-variation-settings:'wght'_650] text-white text-[13px]/4.5">
-                    Simpan perubahan
+                  <div class="flex items-center gap-3 mt-2">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" x-model="form.enforce_strong_password" class="sr-only peer">
+                      <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#147D92]"></div>
+                    </label>
+                    <div class="flex flex-col">
+                      <div class="font-['Inter',system-ui,sans-serif] font-semibold text-[#314E60] text-[13px]/4.5">
+                        Wajibkan kata sandi kuat
+                      </div>
+                      <div class="font-['Inter',system-ui,sans-serif] text-[#7890A0] text-xs/4">
+                        Akun baru harus menggunakan kombinasi huruf besar, angka, dan karakter spesial.
+                      </div>
+                    </div>
                   </div>
-                </button>
-              </div>
+                </div>
+                <div class="h-[68px] flex items-center justify-end px-6 shrink-0 border-t border-t-solid border-t-[#EDF2F5]">
+                  <button type="submit" :disabled="loading" class="h-10 flex items-center px-3.5 rounded-[9px] gap-2 bg-[#147D92] border-none cursor-pointer hover:bg-[#116a7c] transition-colors disabled:opacity-70 disabled:cursor-wait">
+                    <svg x-show="!loading" width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0">
+                      <path d="M20 6 9 17l-5-5" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <svg x-show="loading" style="display: none;" class="animate-spin" width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="9" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="3" />
+                      <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" />
+                    </svg>
+                    <div class="font-['Inter',system-ui,sans-serif] font-[650] [font-variation-settings:'wght'_650] text-white text-[13px]/4.5" x-text="loading ? 'Menyimpan...' : 'Simpan perubahan'">
+                      Simpan perubahan
+                    </div>
+                  </button>
+                </div>
+              </form>
             </div>
 
             <!-- Tab Konfigurasi Backup -->
@@ -343,7 +374,142 @@
           </div>
           
         </div>
+@push('scripts')
 <script>
+  function companyProfileForm(initialData) {
+    return {
+      form: {
+        company_name: initialData?.company_name || '',
+        email: initialData?.email || '',
+        phone: initialData?.phone || '',
+        timezone: initialData?.timezone || 'Asia/Jakarta',
+        address: initialData?.address || '',
+        website: initialData?.website || '',
+      },
+      logoFile: null,
+      logoPreview: initialData?.logo || null,
+      loading: false,
+      toast: { show: false, type: 'success', message: '' },
+
+      get initialLetter() {
+        const name = this.form.company_name || 'V';
+        return name.charAt(0).toUpperCase();
+      },
+
+      handleLogoChange(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+          this.showToast({ type: 'error', message: 'Ukuran file logo maksimal 2 MB.' });
+          return;
+        }
+        this.logoFile = file;
+        this.logoPreview = URL.createObjectURL(file);
+      },
+
+      showToast({ type = 'success', message = '' }) {
+        this.toast = { show: true, type, message };
+        setTimeout(() => this.toast.show = false, 5000);
+      },
+
+      async submit() {
+        this.loading = true;
+        try {
+          const formData = new FormData();
+          formData.append('company_name', this.form.company_name);
+          formData.append('email', this.form.email);
+          formData.append('phone', this.form.phone);
+          formData.append('timezone', this.form.timezone);
+          formData.append('address', this.form.address);
+          formData.append('website', this.form.website);
+
+          if (this.logoFile) {
+            formData.append('logo', this.logoFile);
+          }
+
+          const res = await fetch('{{ url('/api/settings/company') }}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: formData,
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            this.showToast({
+              type: 'error',
+              message: data.message || (data.errors ? Object.values(data.errors)[0][0] : 'Gagal menyimpan profil perusahaan.'),
+            });
+            return;
+          }
+
+          if (data.data?.logo) {
+            this.logoPreview = data.data.logo;
+            const sidebarLogoContainer = document.getElementById('sidebar-company-logo-container');
+            if (sidebarLogoContainer) {
+              sidebarLogoContainer.innerHTML = `<img src="${data.data.logo}" class="w-full h-full object-cover" alt="Logo Perusahaan">`;
+            }
+          }
+          this.showToast({ type: 'success', message: data.message || 'Profil perusahaan berhasil disimpan.' });
+        } catch (e) {
+          this.showToast({ type: 'error', message: 'Tidak dapat terhubung ke server.' });
+        } finally {
+          this.loading = false;
+        }
+      },
+    };
+  }
+
+  function securitySettingsForm(initialData) {
+    return {
+      form: {
+        session_lifetime_minutes: initialData?.session_lifetime_minutes ?? 120,
+        max_login_attempts: initialData?.max_login_attempts ?? 5,
+        enforce_strong_password: Boolean(initialData?.enforce_strong_password),
+      },
+      loading: false,
+      toast: { show: false, type: 'success', message: '' },
+      showToast({ type = 'success', message = '' }) {
+        this.toast = { show: true, type, message };
+        setTimeout(() => this.toast.show = false, 5000);
+      },
+      async submit() {
+        this.loading = true;
+        try {
+          const res = await fetch('{{ url('/api/settings/security') }}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify(this.form),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            this.showToast({
+              type: 'error',
+              message: data.message || (data.errors ? Object.values(data.errors)[0][0] : 'Gagal menyimpan pengaturan.'),
+            });
+            return;
+          }
+          this.showToast({ type: 'success', message: data.message || 'Pengaturan keamanan & akses berhasil disimpan.' });
+        } catch (e) {
+          this.showToast({ type: 'error', message: 'Tidak dapat terhubung ke server.' });
+        } finally {
+          this.loading = false;
+        }
+      },
+    };
+  }
+
   function switchTab(tabId) {
     // Sembunyikan semua konten tab
     document.querySelectorAll('.tab-content').forEach(el => {
@@ -370,4 +536,5 @@
     }
   }
 </script>
+@endpush
 @endsection

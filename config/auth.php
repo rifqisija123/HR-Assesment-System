@@ -99,6 +99,14 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // Broker khusus undangan akses (link buat password) — berlaku 24 jam
+        'invites' => [
+            'provider' => 'users',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => env('AUTH_INVITE_EXPIRE', 1440),
+            'throttle' => 0,
+        ],
     ],
 
     /*
