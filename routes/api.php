@@ -24,11 +24,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/{id}', [UserManagementController::class, 'show']);
         Route::put('/users/{id}', [UserManagementController::class, 'update']);
         Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
+        Route::post('/users/{id}/reset-password', [UserManagementController::class, 'sendResetPassword']);
 
         // ── Profil Perusahaan & Settings ─────────────────────
         Route::get('/settings/company', [\App\Http\Controllers\SystemSettingsController::class, 'getCompany']);
         Route::post('/settings/company', [\App\Http\Controllers\SystemSettingsController::class, 'updateCompany']);
         Route::get('/settings/security', [\App\Http\Controllers\SystemSettingsController::class, 'getSecurity']);
-        Route::post('/settings/security', [\App\Http\Controllers\SystemSettingsController::class, 'updateSecurity']);
+        // ── Riwayat Aktivitas (Audit Logs) ──────────────────
+        Route::get('/activity-logs', [\App\Http\Controllers\ActivityHistoryController::class, 'data']);
+        Route::get('/activity-logs/{id}', [\App\Http\Controllers\ActivityHistoryController::class, 'show']);
     });
 });

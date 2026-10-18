@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\SystemSettingsController;
+use App\Http\Controllers\ActivityHistoryController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth (Guest)
@@ -21,10 +23,10 @@ Route::middleware(['role:super_admin'])->group(function () {
     Route::get('/usermanagement', function () {
         return view('SuperAdmin.ManagementUser.UserManagement');
     });
-    Route::get('/settings', [\App\Http\Controllers\SystemSettingsController::class, 'index']);
-    Route::get('/activity', function () {
-        return view('SuperAdmin.History.ActivityHistory');
-    });
+    Route::get('/settings', [SystemSettingsController::class, 'index']);
+    Route::get('/activity', [ActivityHistoryController::class, 'index'])->name('superadmin.activity');
+    Route::get('/activity/data', [ActivityHistoryController::class, 'data'])->name('superadmin.activity.data');
+    Route::get('/activity/detail/{id}', [ActivityHistoryController::class, 'show'])->name('superadmin.activity.show');
     Route::get('/usermanagement/add', function () {
         return view('SuperAdmin.ManagementUser.AddUser');
     });

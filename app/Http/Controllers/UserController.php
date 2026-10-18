@@ -82,6 +82,16 @@ class UserController extends Controller
         // Update last login timestamp
         $user->update(['last_login_at' => now()]);
 
+        // Log activity
+        \App\Services\AuditLogger::log(
+            action: 'login',
+            description: 'Berhasil masuk ke sistem',
+            auditable: $user,
+            newValues: ['method' => 'Web Session', 'role' => $user->role],
+            user: $user,
+            request: $request
+        );
+
         // Redirect based on role
         return $this->redirectByRole($user);
     }
@@ -91,6 +101,20 @@ class UserController extends Controller
      */
     public function logout(Request $request)
     {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
+        if ($user) {
+            \App\Services\AuditLogger::log(
+                action: 'logout',
+                description: 'Keluar dari sistem',
+                auditable: $user,
+                newValues: ['method' => 'Web Session'],
+                user: $user,
+                request: $request
+            );
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

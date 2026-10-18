@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\UserInvitationMail;
+use App\Mail\UserResetPasswordMail;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -101,6 +102,21 @@ class UserManagementController extends Controller
             }
         }
 
+        \App\Services\AuditLogger::log(
+            action: 'create',
+            description: "Menambahkan pengguna baru {$user->name}",
+            auditable: $user,
+            newValues: [
+                'entity_code' => "ID: #USR-{$user->id}",
+                'name'        => $user->name,
+                'email'       => $user->email,
+                'role'        => $user->role,
+                'status'      => $validated['status'],
+                'send_invite' => $request->boolean('send_invite'),
+            ],
+            request: $request
+        );
+
         return response()->json([
             'message'      => $inviteError
                 ?? ($inviteSent
@@ -155,6 +171,13 @@ class UserManagementController extends Controller
             return response()->json(['message' => 'Akun Super Admin utama tidak dapat diubah.'], 403);
         }
 
+        $oldValues = [
+            'name'      => $user->name,
+            'email'     => $user->email,
+            'role'      => $user->role,
+            'status'    => $user->is_active ? 'aktif' : 'nonaktif',
+        ];
+
         $invitePending = is_null($user->email_verified_at);
 
         if ($invitePending) {
@@ -180,6 +203,21 @@ class UserManagementController extends Controller
                 'role'      => $validated['role'],
                 'is_active' => $validated['status'] === 'aktif',
             ]);
+
+            \App\Services\AuditLogger::log(
+                action: 'update',
+                description: "Mengubah data pengguna {$user->name}",
+                auditable: $user,
+                oldValues: $oldValues,
+                newValues: [
+                    'entity_code' => "ID: #USR-{$user->id}",
+                    'name'        => $user->name,
+                    'email'       => $user->email,
+                    'role'        => $user->role,
+                    'status'      => $validated['status'],
+                ],
+                request: $request
+            );
 
             $inviteSent  = false;
             $inviteError = null;
@@ -224,6 +262,20 @@ class UserManagementController extends Controller
                 'is_active' => $validated['status'] === 'aktif',
             ]);
 
+            \App\Services\AuditLogger::log(
+                action: 'update',
+                description: "Mengubah data pengguna {$user->name}",
+                auditable: $user,
+                oldValues: $oldValues,
+                newValues: [
+                    'entity_code' => "ID: #USR-{$user->id}",
+                    'name'        => $user->name,
+                    'role'        => $user->role,
+                    'status'      => $validated['status'],
+                ],
+                request: $request
+            );
+
             return response()->json([
                 'message' => 'Pengguna berhasil diperbarui.',
                 'data'    => $this->transformUser($user),
@@ -233,7 +285,7 @@ class UserManagementController extends Controller
 
     // ── API: Delete User ─────────────────────────────────
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(int $id, Request $request): JsonResponse
     {
         $user = User::findOrFail($id);
 
@@ -241,11 +293,85 @@ class UserManagementController extends Controller
             return response()->json(['message' => 'Akun Super Admin utama tidak dapat dihapus.'], 403);
         }
 
+        \App\Services\AuditLogger::log(
+            action: 'delete',
+            description: "Menghapus akun pengguna {$user->name}",
+            auditable: $user,
+            oldValues: [
+                'entity_code' => "ID: #USR-{$user->id}",
+                'name'        => $user->name,
+                'email'       => $user->email,
+                'role'        => $user->role,
+            ],
+            request: $request
+        );
+
         $user->delete();
 
         return response()->json([
             'message' => 'Pengguna berhasil dihapus.',
         ]);
+    }
+
+    // ── API: Send Reset Password Invitation ──────────────
+
+    /**
+     * POST /api/users/{id}/reset-password
+     */
+    public function sendResetPassword(int $id, Request $request): JsonResponse
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->email === 'superadmin@sii.com') {
+            return response()->json(['message' => 'Akun Super Admin utama tidak dapat direset.'], 403);
+        }
+
+        if (is_null($user->email_verified_at)) {
+            return response()->json([
+                'message' => 'Pengguna ini belum mengaktifkan akun/password pertama kali. Silakan gunakan kirim ulang undangan.',
+            ], 422);
+        }
+
+        try {
+            /** @var \Illuminate\Auth\Passwords\PasswordBroker $broker */
+            $broker = Password::broker(self::INVITE_BROKER);
+            $token  = $broker->createToken($user);
+
+            $url = route('password.setup', [
+                'token' => $token,
+                'email' => $user->email,
+            ]);
+
+            $expireHours = (int) ceil(config('auth.passwords.' . self::INVITE_BROKER . '.expire', 1440) / 60);
+
+            Mail::to($user->email)->send(new UserResetPasswordMail($user, $url, $expireHours));
+
+            \App\Services\AuditLogger::log(
+                action: 'reset_password',
+                description: "Mengirimkan undangan reset password untuk pengguna {$user->name}",
+                auditable: $user,
+                newValues: [
+                    'entity_code' => "ID: #USR-{$user->id}",
+                    'name'        => $user->name,
+                    'email'       => $user->email,
+                    'role'        => $user->role,
+                ],
+                request: $request
+            );
+
+            return response()->json([
+                'message' => "Undangan reset password telah berhasil dikirim ke {$user->email}.",
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengirim email reset password', [
+                'user_id' => $user->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Gagal mengirim email reset password. Periksa konfigurasi SMTP.',
+            ], 500);
+        }
     }
 
     // ── Web: Set Password (dari link undangan) ──────────

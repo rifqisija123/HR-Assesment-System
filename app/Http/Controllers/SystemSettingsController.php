@@ -90,8 +90,24 @@ class SystemSettingsController extends Controller
             $validated['logo'] = Storage::url($path);
         }
 
+        $oldValues = $company->getOriginal();
         $company->fill($validated);
         $company->save();
+
+        \App\Services\AuditLogger::log(
+            action: 'update',
+            description: 'Mengubah konfigurasi profil perusahaan',
+            auditable: $company,
+            oldValues: $oldValues,
+            newValues: [
+                'entity_code'  => 'Company Setting',
+                'company_name' => $company->company_name,
+                'email'        => $company->email,
+                'phone'        => $company->phone,
+                'website'      => $company->website,
+            ],
+            request: $request
+        );
 
         return response()->json([
             'status'  => 'success',
@@ -131,9 +147,29 @@ class SystemSettingsController extends Controller
             'max_login_attempts.min'            => 'Batas maksimal percobaan login minimal 1 kali.',
         ]);
 
+        $oldSecurity = [
+            'session_lifetime_minutes' => (int) SystemSetting::getValue('session_lifetime_minutes', 120),
+            'max_login_attempts'       => (int) SystemSetting::getValue('max_login_attempts', 5),
+            'enforce_strong_password'  => SystemSetting::getValue('enforce_strong_password', 'true') === 'true',
+        ];
+
         SystemSetting::setValue('session_lifetime_minutes', $validated['session_lifetime_minutes'], 'security');
         SystemSetting::setValue('max_login_attempts', $validated['max_login_attempts'], 'security');
         SystemSetting::setValue('enforce_strong_password', $validated['enforce_strong_password'] ? 'true' : 'false', 'security');
+
+        \App\Services\AuditLogger::log(
+            action: 'update',
+            description: 'Memperbarui konfigurasi keamanan & akses sistem',
+            auditable: null,
+            oldValues: $oldSecurity,
+            newValues: [
+                'entity_code'              => 'Security Setting',
+                'session_lifetime_minutes' => (int) $validated['session_lifetime_minutes'],
+                'max_login_attempts'       => (int) $validated['max_login_attempts'],
+                'enforce_strong_password'  => (bool) $validated['enforce_strong_password'],
+            ],
+            request: $request
+        );
 
         return response()->json([
             'status'  => 'success',

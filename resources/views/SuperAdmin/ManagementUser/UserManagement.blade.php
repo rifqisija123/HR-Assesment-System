@@ -172,7 +172,7 @@
                           </button>
 
                           <!-- Dropdown Menu -->
-                          <div x-show="menuOpen" x-transition.opacity.duration.200ms style="display: none;" class="absolute right-[40px] top-8 w-40 bg-white rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-solid border-[#EDF2F5] z-10 overflow-hidden flex flex-col py-1">
+                          <div x-show="menuOpen" x-transition.opacity.duration.200ms style="display: none;" class="absolute right-[40px] top-8 w-44 bg-white rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-solid border-[#EDF2F5] z-10 overflow-hidden flex flex-col py-1">
                             <a :href="'{{ url('/usermanagement/edit') }}/' + user.id" @click.stop="menuOpen = false" class="w-full text-left px-4 py-2 font-['Inter',system-ui,sans-serif] text-[13px] text-[#314E60] hover:bg-[#F8FAFC] transition-colors border-none bg-transparent cursor-pointer flex items-center gap-2 no-underline">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="#314E60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -187,6 +187,15 @@
                               </svg>
                               Hapus pengguna
                             </button>
+                            <template x-if="!user.invite_pending">
+                              <button type="button" @click.stop="menuOpen = false; $dispatch('confirm-reset-password', user)" class="w-full text-left px-4 py-2 font-['Inter',system-ui,sans-serif] text-[13px] text-[#147D92] hover:bg-[#F0F9FA] transition-colors border-none bg-transparent cursor-pointer flex items-center gap-2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#147D92" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                Reset password
+                              </button>
+                            </template>
                           </div>
                         </div>
                       </template>
@@ -311,6 +320,7 @@
 
       init() {
         window.addEventListener('confirm-delete-user', (e) => this.deleteUser(e.detail));
+        window.addEventListener('confirm-reset-password', (e) => this.resetPassword(e.detail));
 
         // Tampilkan notifikasi dari halaman tambah/edit pengguna
         const flash = sessionStorage.getItem('userFlash');
@@ -322,7 +332,32 @@
       },
 
       async deleteUser(user) {
-        if (!confirm(`Apakah Anda yakin ingin menghapus pengguna "${user.name}"?`)) return;
+        let isConfirmed = false;
+
+        if (typeof Swal !== 'undefined') {
+          const result = await Swal.fire({
+            title: 'Hapus Pengguna?',
+            text: `Apakah Anda yakin ingin menghapus pengguna ${user.name}? Tindakan ini tidak dapat dibatalkan.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#E53E3E',
+            cancelButtonColor: '#7890A0',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            focusCancel: true,
+            customClass: {
+              popup: 'rounded-[16px] font-sans',
+              confirmButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+              cancelButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+            },
+          });
+          isConfirmed = result.isConfirmed;
+        } else {
+          isConfirmed = confirm(`Apakah Anda yakin ingin menghapus pengguna "${user.name}"?`);
+        }
+
+        if (!isConfirmed) return;
 
         try {
           const res = await fetch(`{{ url('/api/users') }}/${user.id}`, {
@@ -337,14 +372,137 @@
           const data = await res.json().catch(() => ({}));
 
           if (!res.ok) {
-            this.showToast({ type: 'error', message: data.message || 'Gagal menghapus pengguna.' });
+            const errorMsg = data.message || 'Gagal menghapus pengguna.';
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                title: 'Gagal!',
+                text: errorMsg,
+                icon: 'error',
+                confirmButtonColor: '#147D92',
+              });
+            } else {
+              this.showToast({ type: 'error', message: errorMsg });
+            }
             return;
           }
 
-          this.showToast({ type: 'success', message: data.message || 'Pengguna berhasil dihapus.' });
+          const successMsg = data.message || 'Pengguna berhasil dihapus.';
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              title: 'Berhasil!',
+              text: successMsg,
+              icon: 'success',
+              confirmButtonColor: '#147D92',
+              timer: 2000,
+              showConfirmButton: false,
+            });
+          }
+          this.showToast({ type: 'success', message: successMsg });
           this.fetchUsers(this.meta.current_page);
         } catch (e) {
-          this.showToast({ type: 'error', message: 'Tidak dapat terhubung ke server.' });
+          const connError = 'Tidak dapat terhubung ke server.';
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              title: 'Terjadi Kesalahan!',
+              text: connError,
+              icon: 'error',
+              confirmButtonColor: '#147D92',
+            });
+          } else {
+            this.showToast({ type: 'error', message: connError });
+          }
+        }
+      },
+
+      async resetPassword(user) {
+        let isConfirmed = false;
+
+        if (typeof Swal !== 'undefined') {
+          const result = await Swal.fire({
+            title: 'Reset Password Pengguna?',
+            text: `Apakah pengguna ${user.name} dengan role ${user.role_label} ingin di reset password nya?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#147D92',
+            cancelButtonColor: '#7890A0',
+            confirmButtonText: 'Ya, Reset Password',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            focusCancel: true,
+            customClass: {
+              popup: 'rounded-[16px] font-sans',
+              confirmButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+              cancelButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+            },
+          });
+          isConfirmed = result.isConfirmed;
+        } else {
+          isConfirmed = confirm(`Apakah akun/pengguna "${user.name}" dengan role "${user.role_label}" ingin di reset password nya?`);
+        }
+
+        if (!isConfirmed) return;
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            title: 'Mengirim Undangan...',
+            text: `Sedang mengirimkan email reset password ke ${user.email}...`,
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            },
+          });
+        }
+
+        try {
+          const res = await fetch(`{{ url('/api/users') }}/${user.id}/reset-password`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+          });
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            const errorMsg = data.message || 'Gagal mengirim email reset password.';
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                title: 'Gagal!',
+                text: errorMsg,
+                icon: 'error',
+                confirmButtonColor: '#147D92',
+              });
+            } else {
+              this.showToast({ type: 'error', message: errorMsg });
+            }
+            return;
+          }
+
+          const successMsg = data.message || `Undangan reset password telah berhasil dikirim ke ${user.email}.`;
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              title: 'Berhasil!',
+              text: successMsg,
+              icon: 'success',
+              confirmButtonColor: '#147D92',
+            });
+          }
+          this.showToast({ type: 'success', message: successMsg });
+        } catch (e) {
+          const connError = 'Tidak dapat terhubung ke server.';
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              title: 'Terjadi Kesalahan!',
+              text: connError,
+              icon: 'error',
+              confirmButtonColor: '#147D92',
+            });
+          } else {
+            this.showToast({ type: 'error', message: connError });
+          }
         }
       },
 

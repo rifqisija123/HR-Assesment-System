@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\UserMiddleware;
+use App\Http\Middleware\LogPageAccess;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -16,7 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
 
         $middleware->alias([
-            'role' => \App\Http\Middleware\UserMiddleware::class,
+            'role' => UserMiddleware::class,
+        ]);
+
+        $middleware->web(append: [
+            LogPageAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
