@@ -4,6 +4,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\ActivityHistoryController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KategoriSoalController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth (Guest)
@@ -17,15 +19,15 @@ Route::post('/set-password', [UserManagementController::class, 'setPassword'])->
 
 // ── Super Admin
 Route::middleware(['role:super_admin'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('SuperAdmin.Dashboard');
-    });
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('superadmin.dashboard');
     Route::get('/usermanagement', function () {
         return view('SuperAdmin.ManagementUser.UserManagement');
     });
     Route::get('/settings', [SystemSettingsController::class, 'index']);
     Route::get('/activity', [ActivityHistoryController::class, 'index'])->name('superadmin.activity');
     Route::get('/activity/data', [ActivityHistoryController::class, 'data'])->name('superadmin.activity.data');
+    Route::get('/activity/export/xlsx', [ActivityHistoryController::class, 'exportXlsx'])->name('superadmin.activity.export.xlsx');
+    Route::get('/activity/export/pdf', [ActivityHistoryController::class, 'exportPdf'])->name('superadmin.activity.export.pdf');
     Route::get('/activity/detail/{id}', [ActivityHistoryController::class, 'show'])->name('superadmin.activity.show');
     Route::get('/usermanagement/add', function () {
         return view('SuperAdmin.ManagementUser.AddUser');
@@ -34,13 +36,14 @@ Route::middleware(['role:super_admin'])->group(function () {
 });
 
 // ── HR Admin
-Route::middleware(['role:hr_admin'])->prefix('hr')->group(function () {
+Route::middleware(['role:hr_admin,super_admin'])->prefix('hr')->group(function () {
     Route::get('/dashboard', function () {
         return view('HRAdmin.Dashboard');
     });
-    Route::get('/question-categories', function () {
-        return view('HRAdmin.QuestionCategory.KategoriSoal');
-    });
+    Route::get('/question-categories', [KategoriSoalController::class, 'index'])->name('hr.question-categories.index');
+    Route::get('/question-categories/create', [KategoriSoalController::class, 'create'])->name('hr.question-categories.create');
+    Route::get('/question-categories/edit/{id}', [KategoriSoalController::class, 'edit'])->name('hr.question-categories.edit');
+
     Route::get('/question-bank', function () {
         return view('HRAdmin.QuestionBank.BankSoal');
     });
@@ -55,9 +58,6 @@ Route::middleware(['role:hr_admin'])->prefix('hr')->group(function () {
     });
     Route::get('/reports', function () {
         return view('HRAdmin.Reports.Laporan');
-    });
-    Route::get('/question-categories/create', function () {
-        return view('HRAdmin.QuestionCategory.AddKategori');
     });
     Route::get('/question-bank/create', function () {
         return view('HRAdmin.QuestionBank.AddSoal');

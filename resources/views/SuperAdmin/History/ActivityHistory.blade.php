@@ -3,6 +3,34 @@
 @section('page_title', 'Riwayat aktivitas')
 
 @section('content')
+<!-- Flatpickr Datepicker Assets -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+
+<style>
+  .flatpickr-calendar {
+    font-family: 'Inter', system-ui, sans-serif !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid #EDF2F5 !important;
+    z-index: 99999 !important;
+  }
+  .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, 
+  .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, 
+  .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, 
+  .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover {
+    background: #147D92 !important;
+    border-color: #147D92 !important;
+  }
+  .flatpickr-day.inRange {
+    box-shadow: -5px 0 0 #E2F4F3, 5px 0 0 #E2F4F3 !important;
+    background: #E2F4F3 !important;
+    border-color: #E2F4F3 !important;
+    color: #147D92 !important;
+  }
+</style>
+
 <div x-data="activityTable()" x-init="init()" class="flex flex-col gap-6 w-full">
 
   <!-- Header & Action Buttons -->
@@ -78,7 +106,7 @@
         </div>
         
         <div class="absolute right-0 mt-2 w-44 bg-white rounded-[10px] shadow-lg border border-solid border-[#DDE6ED] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 flex flex-col overflow-hidden py-1.5">
-          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#F8FAFC] transition-colors decoration-none">
+          <a :href="getExportUrl('xlsx')" href="{{ route('superadmin.activity.export.xlsx') }}" id="btn-export-xlsx" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#F8FAFC] transition-colors decoration-none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#147D92" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M14 2V8H20" stroke="#147D92" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -88,7 +116,7 @@
             </svg>
             <span class="font-['Inter',system-ui,sans-serif] font-medium text-[#314E60] text-[13px]">Ekspor sebagai XLSX</span>
           </a>
-          <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#F8FAFC] transition-colors decoration-none">
+          <a :href="getExportUrl('pdf')" href="{{ route('superadmin.activity.export.pdf') }}" id="btn-export-pdf" class="flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#F8FAFC] transition-colors decoration-none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="#E11D48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M14 2V8H20" stroke="#E11D48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -196,23 +224,26 @@
         </div>
       </div>
 
-      <!-- Filter 4: Rentang Tanggal -->
+      <!-- Filter 4: Rentang Tanggal (Flatpickr Calendar seperti di Kategori Soal) -->
       <div class="flex flex-col gap-1.5">
         <label class="font-['Inter',system-ui,sans-serif] font-medium text-[#486174] text-[12px]">Rentang Tanggal</label>
-        <div class="flex items-center gap-2">
-          <input 
-            type="date" 
-            x-model="filters.date_from" 
-            @change="fetchLogs(1)"
-            title="Dari Tanggal"
-            class="h-10 w-full px-2.5 rounded-[8px] border border-solid border-[#DDE6ED] bg-white font-['Inter',system-ui,sans-serif] text-[12px] text-[#314E60] outline-none focus:border-[#147D92]">
-          <span class="text-[#7890A0] text-xs font-bold">-</span>
-          <input 
-            type="date" 
-            x-model="filters.date_to" 
-            @change="fetchLogs(1)"
-            title="Sampai Tanggal"
-            class="h-10 w-full px-2.5 rounded-[8px] border border-solid border-[#DDE6ED] bg-white font-['Inter',system-ui,sans-serif] text-[12px] text-[#314E60] outline-none focus:border-[#147D92]">
+        <div class="relative">
+          <div class="flex items-center border border-solid border-[#DDE6ED] rounded-[8px] gap-2.5 h-10 px-3 bg-white hover:bg-gray-50 transition-colors focus-within:border-[#147D92] focus-within:ring-1 focus-within:ring-[#147D92] cursor-pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 pointer-events-none">
+              <rect x="3" y="4" width="18" height="18" rx="2" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 2v4M8 2v4M3 10h18" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <input 
+              id="filter-date-range"
+              x-init="initDateRangePicker($el)" 
+              type="text" 
+              readonly
+              placeholder="Pilih rentang tanggal..." 
+              class="bg-transparent border-none outline-none text-[#314E60] font-['Inter',system-ui,sans-serif] text-[13px] font-medium w-full cursor-pointer placeholder:text-[#92A4B0]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 pointer-events-none">
+              <polyline points="6 9 12 15 18 9" stroke="#7890A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -244,8 +275,8 @@
 
       <template x-if="filters.date_from || filters.date_to">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-[#E2F4F3] text-[#147D92] text-[12px] font-medium">
-          Tanggal: <span x-text="(filters.date_from || '...') + ' s/d ' + (filters.date_to || '...')"></span>
-          <button type="button" @click="filters.date_from = ''; filters.date_to = ''; fetchLogs(1)" class="hover:text-[#0b4855] border-none bg-transparent cursor-pointer p-0">✕</button>
+          Tanggal: <span x-text="getDateFilterLabel()"></span>
+          <button type="button" @click="clearDateFilter()" class="hover:text-[#0b4855] border-none bg-transparent cursor-pointer p-0">✕</button>
         </span>
       </template>
     </div>
@@ -270,25 +301,6 @@
             @input.debounce.350ms="fetchLogs(1)" 
             placeholder="Cari aktivitas, pengguna, atau IP..." 
             class="h-10 pl-10 pr-4 text-sm font-['Inter',system-ui,sans-serif] border border-solid border-[#DDE6ED] rounded-[8px] bg-white outline-none focus:border-[#147D92] focus:ring-1 focus:ring-[#147D92] w-72 sm:w-80 text-[#314E60] placeholder-[#94A3B8] transition-all">
-        </div>
-
-        <!-- Show Entries Dropdown (Toolbar) -->
-        <div class="flex items-center gap-2">
-          <span class="text-[13px] text-[#62798A] font-['Inter',system-ui,sans-serif] whitespace-nowrap">Show</span>
-          <div class="relative">
-            <select 
-              x-model.number="meta.per_page" 
-              @change="fetchLogs(1)" 
-              id="select-show-entries-top"
-              class="appearance-none h-10 pl-3 pr-8 text-[13px] font-['Inter',system-ui,sans-serif] font-semibold text-[#314E60] bg-white border border-solid border-[#DDE6ED] rounded-[8px] cursor-pointer hover:bg-gray-50 focus:border-[#147D92] focus:ring-1 focus:ring-[#147D92] outline-none transition-colors">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-            <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#7890A0]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </div>
-          <span class="text-[13px] text-[#62798A] font-['Inter',system-ui,sans-serif] whitespace-nowrap">entri</span>
         </div>
       </div>
 
@@ -874,6 +886,107 @@
         return this.filters.user_id;
       },
 
+      getExportUrl(type) {
+        const base = type === 'pdf' 
+          ? '{{ route('superadmin.activity.export.pdf') }}' 
+          : '{{ route('superadmin.activity.export.xlsx') }}';
+        
+        const params = new URLSearchParams();
+        Object.entries(this.filters).forEach(([key, val]) => {
+          if (val !== '' && val !== null && val !== undefined) {
+            params.append(key, val);
+          }
+        });
+
+        const qs = params.toString();
+        return qs ? `${base}?${qs}` : base;
+      },
+
+      datePickerInstance: null,
+
+      initDateRangePicker(el) {
+        const setup = () => {
+          if (typeof flatpickr === 'undefined') {
+            setTimeout(setup, 50);
+            return;
+          }
+          const self = this;
+          this.datePickerInstance = flatpickr(el, {
+            mode: 'range',
+            dateFormat: 'd M Y',
+            locale: (flatpickr.l10ns && flatpickr.l10ns.id) ? flatpickr.l10ns.id : 'default',
+            conjunction: ' - ',
+            onChange: function(selectedDates, dateStr, instance) {
+              if (selectedDates.length === 2) {
+                const formatDate = (d) => {
+                  const year = d.getFullYear();
+                  const month = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  return `${year}-${month}-${day}`;
+                };
+                const [start, end] = selectedDates[0] <= selectedDates[1] 
+                  ? [selectedDates[0], selectedDates[1]] 
+                  : [selectedDates[1], selectedDates[0]];
+
+                self.filters.date_from = formatDate(start);
+                self.filters.date_to = formatDate(end);
+                self.fetchLogs(1);
+              } else if (selectedDates.length === 0) {
+                if (self.filters.date_from !== '' || self.filters.date_to !== '') {
+                  self.filters.date_from = '';
+                  self.filters.date_to = '';
+                  self.fetchLogs(1);
+                }
+              }
+            },
+            onReady: function(selectedDates, dateStr, instance) {
+              const btnContainer = document.createElement('div');
+              btnContainer.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-top:1px solid #EDF2F5; background-color:#F8FAFC; border-bottom-left-radius:12px; border-bottom-right-radius:12px;';
+              
+              const infoText = document.createElement('span');
+              infoText.style.cssText = 'color:#7890A0; font-size:11px; font-weight:500; font-family:Inter,system-ui,sans-serif;';
+              infoText.innerText = 'Pilih rentang';
+
+              const resetBtn = document.createElement('button');
+              resetBtn.type = 'button';
+              resetBtn.style.cssText = 'color:#62798A; font-size:12px; font-weight:600; font-family:Inter,system-ui,sans-serif; background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px;';
+              resetBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Reset Tanggal';
+              
+              resetBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                instance.clear();
+              });
+              
+              btnContainer.appendChild(infoText);
+              btnContainer.appendChild(resetBtn);
+              instance.calendarContainer.appendChild(btnContainer);
+            }
+          });
+        };
+        setup();
+      },
+
+      getDateFilterLabel() {
+        if (this.datePickerInstance && this.datePickerInstance.input && this.datePickerInstance.input.value) {
+          return this.datePickerInstance.input.value;
+        }
+        if (this.filters.date_from && this.filters.date_to) {
+          return this.filters.date_from + ' s/d ' + this.filters.date_to;
+        }
+        return this.filters.date_from || this.filters.date_to || '';
+      },
+
+      clearDateFilter() {
+        this.filters.date_from = '';
+        this.filters.date_to = '';
+        if (this.datePickerInstance) {
+          this.datePickerInstance.clear();
+        } else {
+          this.fetchLogs(1);
+        }
+      },
+
       resetFilters() {
         this.filters.search = '';
         this.filters.user_id = '';
@@ -881,6 +994,9 @@
         this.filters.action = '';
         this.filters.date_from = '';
         this.filters.date_to = '';
+        if (this.datePickerInstance) {
+          this.datePickerInstance.clear();
+        }
         this.fetchLogs(1);
       },
 

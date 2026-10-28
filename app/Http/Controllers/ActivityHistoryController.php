@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ActivityHistoryExport;
 use App\Models\AuditLog;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Spatie\LaravelPdf\Facades\Pdf;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ActivityHistoryController extends Controller
 {
@@ -18,6 +23,53 @@ class ActivityHistoryController extends Controller
         $users = User::orderBy('name')->get(['id', 'name', 'email', 'role']);
 
         return view('SuperAdmin.History.ActivityHistory', compact('users'));
+    }
+
+    /**
+     * Ekspor seluruh riwayat aktivitas ke file Excel (.xlsx).
+     */
+    public function exportXlsx(Request $request): BinaryFileResponse
+    {
+        return Excel::download(
+            new ActivityHistoryExport($request->all()),
+            'DATA_RIWAYAT_AKTIVITAS.xlsx'
+        );
+    }
+
+    /**
+     * Ekspor seluruh riwayat aktivitas ke file PDF (.pdf).
+     */
+    public function exportPdf(Request $request): Response
+    {
+        $export = new ActivityHistoryExport($request->all());
+        $logs = $export->collection();
+
+        $tz = config('app.timezone', 'Asia/Jakarta');
+        $generatedAt = now($tz)->locale('id');
+        $generatedBy = $request->user();
+        $filters = $request->only(['search', 'user_id', 'role', 'action', 'date_from', 'date_to']);
+
+        $filteredUser = null;
+        if (!empty($filters['user_id'])) {
+            if ($filters['user_id'] === 'system') {
+                $filteredUser = 'System Auto';
+            } else {
+                $filteredUser = User::find($filters['user_id'])?->name ?? $filters['user_id'];
+            }
+        }
+
+        return Pdf::view('SuperAdmin.History.ActivityHistoryPdf', compact(
+            'logs',
+            'filters',
+            'filteredUser',
+            'generatedAt',
+            'generatedBy'
+        ))
+            ->format('a4')
+            ->landscape()
+            ->name('DATA_RIWAYAT_AKTIVITAS.pdf')
+            ->download('DATA_RIWAYAT_AKTIVITAS.pdf')
+            ->toResponse($request);
     }
 
     /**

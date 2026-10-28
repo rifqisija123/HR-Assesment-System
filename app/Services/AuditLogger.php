@@ -28,9 +28,12 @@ class AuditLogger
         $user = $user ?? Auth::user();
 
         $payload = $newValues ?? [];
-        if (!isset($payload['description'])) {
-            $payload['description'] = $description;
+        if (array_key_exists('description', $payload) && $payload['description'] !== $description) {
+            if (!isset($payload['deskripsi']) && $payload['description'] !== null) {
+                $payload['deskripsi'] = $payload['description'];
+            }
         }
+        $payload['description'] = $description;
 
         $userId = null;
         if ($user instanceof Authenticatable) {

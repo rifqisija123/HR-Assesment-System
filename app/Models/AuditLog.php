@@ -51,6 +51,22 @@ class AuditLog extends Model
      */
     public function getDescriptionAttribute(): string
     {
+        if (
+            class_basename($this->auditable_type ?? '') === 'QuestionCategory'
+            && !empty($this->new_values['name'])
+            && in_array(strtolower($this->action), ['create', 'update'], true)
+        ) {
+            $desc = (string) ($this->new_values['description'] ?? '');
+            if (
+                !str_starts_with($desc, 'Menambahkan kategori soal:')
+                && !str_starts_with($desc, 'Memperbarui kategori soal:')
+            ) {
+                return strtolower($this->action) === 'create'
+                    ? 'Menambahkan kategori soal: ' . $this->new_values['name']
+                    : 'Memperbarui kategori soal: ' . $this->new_values['name'];
+            }
+        }
+
         if (!empty($this->new_values['description'])) {
             return $this->new_values['description'];
         }

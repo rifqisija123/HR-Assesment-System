@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\SystemSettingsController;
+use App\Http\Controllers\ActivityHistoryController;
+use App\Http\Controllers\KategoriSoalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -27,11 +30,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users/{id}/reset-password', [UserManagementController::class, 'sendResetPassword']);
 
         // ── Profil Perusahaan & Settings ─────────────────────
-        Route::get('/settings/company', [\App\Http\Controllers\SystemSettingsController::class, 'getCompany']);
-        Route::post('/settings/company', [\App\Http\Controllers\SystemSettingsController::class, 'updateCompany']);
-        Route::get('/settings/security', [\App\Http\Controllers\SystemSettingsController::class, 'getSecurity']);
+        Route::get('/settings/company', [SystemSettingsController::class, 'getCompany']);
+        Route::post('/settings/company', [SystemSettingsController::class, 'updateCompany']);
+        Route::get('/settings/security', [SystemSettingsController::class, 'getSecurity']);
         // ── Riwayat Aktivitas (Audit Logs) ──────────────────
-        Route::get('/activity-logs', [\App\Http\Controllers\ActivityHistoryController::class, 'data']);
-        Route::get('/activity-logs/{id}', [\App\Http\Controllers\ActivityHistoryController::class, 'show']);
+        Route::get('/activity-logs', [ActivityHistoryController::class, 'data']);
+        Route::get('/activity-logs/{id}', [ActivityHistoryController::class, 'show']);
+    });
+
+    // ── HR Admin: Kategori Soal
+    Route::middleware('role:hr_admin,super_admin')->group(function () {
+        Route::get('/question-categories', [KategoriSoalController::class, 'index'])->name('api.question-categories.index');
+        Route::post('/question-categories', [KategoriSoalController::class, 'store'])->name('api.question-categories.store');
+        Route::get('/question-categories/{id}', [KategoriSoalController::class, 'show'])->name('api.question-categories.show');
+        Route::put('/question-categories/{id}', [KategoriSoalController::class, 'update'])->name('api.question-categories.update');
+        Route::delete('/question-categories/{id}', [KategoriSoalController::class, 'destroy'])->name('api.question-categories.destroy');
     });
 });
