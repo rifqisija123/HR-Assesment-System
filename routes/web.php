@@ -6,6 +6,7 @@ use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\ActivityHistoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriSoalController;
+use App\Http\Controllers\BankSoalController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth (Guest)
@@ -44,9 +45,10 @@ Route::middleware(['role:hr_admin,super_admin'])->prefix('hr')->group(function (
     Route::get('/question-categories/create', [KategoriSoalController::class, 'create'])->name('hr.question-categories.create');
     Route::get('/question-categories/edit/{id}', [KategoriSoalController::class, 'edit'])->name('hr.question-categories.edit');
 
-    Route::get('/question-bank', function () {
-        return view('HRAdmin.QuestionBank.BankSoal');
-    });
+    Route::get('/question-bank', [BankSoalController::class, 'index'])->name('hr.question-bank.index');
+    Route::get('/question-bank/create', [BankSoalController::class, 'create'])->name('hr.question-bank.create');
+    Route::get('/question-bank/edit/{id}', [BankSoalController::class, 'edit'])->name('hr.question-bank.edit');
+
     Route::get('/test-packages', function () {
         return view('HRAdmin.TestPackage.PaketTes');
     });
@@ -58,9 +60,6 @@ Route::middleware(['role:hr_admin,super_admin'])->prefix('hr')->group(function (
     });
     Route::get('/reports', function () {
         return view('HRAdmin.Reports.Laporan');
-    });
-    Route::get('/question-bank/create', function () {
-        return view('HRAdmin.QuestionBank.AddSoal');
     });
     Route::get('/test-packages/create', function () {
         return view('HRAdmin.TestPackage.AddPaketTes');

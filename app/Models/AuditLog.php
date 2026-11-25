@@ -67,6 +67,30 @@ class AuditLog extends Model
             }
         }
 
+        if (strtolower((string) $this->action) === 'get' && !empty($this->new_values['path'])) {
+            $path = '/' . ltrim((string) $this->new_values['path'], '/');
+            $specificTitle = match (true) {
+                str_starts_with($path, '/usermanagement/add'), str_starts_with($path, '/usermanagement/create') => 'Form Tambah Pengguna',
+                str_starts_with($path, '/usermanagement/edit')        => 'Form Edit Pengguna',
+                str_starts_with($path, '/hr/question-categories/create') => 'Form Tambah Kategori Soal',
+                str_starts_with($path, '/hr/question-categories/edit')   => 'Form Edit Kategori Soal',
+                str_starts_with($path, '/hr/question-bank/create')       => 'Form Tambah Soal',
+                str_starts_with($path, '/hr/question-bank/edit')         => 'Form Edit Soal',
+                str_starts_with($path, '/hr/test-packages/create')       => 'Form Tambah Paket Tes',
+                str_starts_with($path, '/hr/test-packages/edit')         => 'Form Edit Paket Tes',
+                str_starts_with($path, '/hr/test-sessions/create')       => 'Form Tambah Sesi Tes',
+                str_starts_with($path, '/hr/test-sessions/edit')         => 'Form Edit Sesi Tes',
+                str_starts_with($path, '/hr/candidates/create')          => 'Form Tambah Kandidat',
+                str_starts_with($path, '/hr/candidates/import')          => 'Form Import Kandidat',
+                str_starts_with($path, '/hr/candidates/edit')            => 'Form Edit Kandidat',
+                default => null,
+            };
+
+            if ($specificTitle !== null) {
+                return "Mengakses halaman {$specificTitle}";
+            }
+        }
+
         if (!empty($this->new_values['description'])) {
             return $this->new_values['description'];
         }
@@ -139,6 +163,59 @@ class AuditLog extends Model
         }
 
         return '-';
+    }
+
+    /**
+     * Route / endpoint yang terkait dengan aktivitas ini.
+     */
+    public function getRoutePathAttribute(): ?string
+    {
+        if (!empty($this->new_values['path'])) {
+            return (string) $this->new_values['path'];
+        }
+
+        $action = strtolower((string) $this->action);
+        $base   = class_basename($this->auditable_type ?? '');
+        $id     = $this->auditable_id;
+
+        if ($action === 'login') {
+            $method = strtolower((string) ($this->new_values['method'] ?? ''));
+            return str_contains($method, 'api') ? '/api/auth/login' : '/login';
+        }
+
+        if ($action === 'logout') {
+            $method = strtolower((string) ($this->new_values['method'] ?? ''));
+            return str_contains($method, 'api') ? '/api/auth/logout' : '/logout';
+        }
+
+        if ($action === 'reset_password') {
+            return $id ? "/api/users/{$id}/reset-password" : '/api/users/reset-password';
+        }
+
+        return match ($base) {
+            'QuestionCategory' => match ($action) {
+                'create'           => '/api/question-categories',
+                'update', 'delete' => $id ? "/api/question-categories/{$id}" : '/api/question-categories',
+                default            => '/hr/question-categories',
+            },
+            'Question' => match ($action) {
+                'create'           => '/api/question-bank',
+                'update', 'delete' => $id ? "/api/question-bank/{$id}" : '/api/question-bank',
+                default            => '/hr/question-bank',
+            },
+            'User' => match ($action) {
+                'create'           => '/api/users',
+                'update', 'delete' => $id ? "/api/users/{$id}" : '/api/users',
+                default            => '/usermanagement',
+            },
+            'CompanySetting' => '/api/settings/company',
+            'SystemSetting'  => '/api/settings/security',
+            'TestPackage'    => $id && in_array($action, ['update', 'delete'], true) ? "/hr/test-packages/{$id}" : '/hr/test-packages',
+            'TestSession'    => $id && in_array($action, ['update', 'delete'], true) ? "/hr/test-sessions/{$id}" : '/hr/test-sessions',
+            'Candidate', 'SessionCandidate' => $id && in_array($action, ['update', 'delete'], true) ? "/hr/candidates/{$id}" : '/hr/candidates',
+            'EssayReview'    => '/reviewer/review-essay',
+            default          => null,
+        };
     }
 
     /**

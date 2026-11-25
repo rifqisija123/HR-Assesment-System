@@ -412,8 +412,8 @@
                   </span>
                   <div class="flex flex-col min-w-0">
                     <div class="font-['Inter',system-ui,sans-serif] text-[13px] text-[#314E60] font-medium" x-text="log.description"></div>
-                    <template x-if="log.action === 'get' && log.new_values?.path">
-                      <div class="font-mono text-[11px] text-[#7890A0]" x-text="log.new_values.path"></div>
+                    <template x-if="getLogPath(log)">
+                      <div class="font-mono text-[11px] text-[#7890A0]" x-text="getLogPath(log)"></div>
                     </template>
                   </div>
                 </div>
@@ -624,6 +624,9 @@
               <span class="font-['Inter'] font-semibold text-[#102A43] text-[13px]" x-text="selectedLog?.entity_type"></span>
             </div>
             <p class="font-['Inter'] text-[13px] text-[#314E60] font-medium m-0 leading-relaxed" x-text="selectedLog?.description"></p>
+            <template x-if="getLogPath(selectedLog)">
+              <div class="font-mono text-[11px] text-[#7890A0] mt-0.5" x-text="getLogPath(selectedLog)"></div>
+            </template>
             <div class="font-['Inter'] text-[11px] text-[#7890A0] mt-1" x-text="'Identifier: ' + (selectedLog?.entity_id || '-')"></div>
           </div>
 
@@ -1066,6 +1069,40 @@
           this.copiedUA = true;
           setTimeout(() => { this.copiedUA = false; }, 2500);
         });
+      },
+
+      getLogPath(log) {
+        if (!log) return '';
+        if (log.route_path) return log.route_path;
+        if (log.new_values?.path) return log.new_values.path;
+
+        const action = String(log.action || '').toLowerCase();
+        const type = String(log.auditable_type || '').split('\\').pop();
+        const id = log.auditable_id;
+
+        if (action === 'login') return '/login';
+        if (action === 'logout') return '/logout';
+        if (action === 'reset_password') return id ? `/api/users/${id}/reset-password` : '/api/users/reset-password';
+
+        if (type === 'QuestionCategory') {
+          return (action === 'update' || action === 'delete') && id
+            ? `/api/question-categories/${id}`
+            : '/api/question-categories';
+        }
+        if (type === 'Question') {
+          return (action === 'update' || action === 'delete') && id
+            ? `/api/question-bank/${id}`
+            : '/api/question-bank';
+        }
+        if (type === 'User') {
+          return (action === 'update' || action === 'delete') && id
+            ? `/api/users/${id}`
+            : '/api/users';
+        }
+        if (type === 'CompanySetting') return '/api/settings/company';
+        if (type === 'SystemSetting') return '/api/settings/security';
+
+        return '';
       },
 
       formatValue(val) {

@@ -88,7 +88,7 @@
           <label for="jumlah_soal" class="font-['Inter',system-ui,sans-serif] font-semibold text-[#486174] text-[12px]/[16px]">
             Jumlah soal <span class="text-[#E53E3E]">*</span>
           </label>
-          <input type="number" id="jumlah_soal" name="jumlah_soal" x-model="form.jumlah_soal" placeholder="0" min="0"
+          <input type="number" id="jumlah_soal" name="jumlah_soal" x-model="form.jumlah_soal" @change="onJumlahSoalChange()" placeholder="0" min="0"
             :class="errors.jumlah_soal ? 'border-[#E53E3E] ring-1 ring-[#E53E3E]' : 'border-[#DDE6ED]'"
             class="h-[42px] px-3 rounded-[9px] border bg-white font-['Inter',system-ui,sans-serif] text-[13px] text-[#102A43] placeholder-[#A2B0BA] focus:outline-none focus:border-[#147D92] focus:ring-1 focus:ring-[#147D92] transition-colors w-full">
           <div x-show="errors.jumlah_soal" x-text="errors.jumlah_soal" style="display: none;" class="font-['Inter',system-ui,sans-serif] text-[#E53E3E] text-[12px]/[16px]"></div>
@@ -184,6 +184,8 @@
 <script>
   function editKategoriForm(initialData) {
     return {
+      initialJumlahSoal: Number(initialData.jumlah_soal ?? 0),
+      questionsCount: Number(initialData.questions_count ?? 0),
       form: {
         id: initialData.id,
         nama_kategori: initialData.nama_kategori || '',
@@ -195,6 +197,47 @@
       errors: {},
       generalError: '',
       loading: false,
+
+      async showQuotaReduceAlert(customMessage = '') {
+        const message = customMessage
+          || `Mengurangi jumlah soal dari sebelumnya (${this.initialJumlahSoal} soal) tidak dapat dilakukan karena kategori "${this.form.nama_kategori}" sudah memiliki ${this.questionsCount} soal di Bank Soal. Harap menghapus soal di Bank Soal terlebih dahulu.`;
+
+        if (typeof Swal !== 'undefined') {
+          const result = await Swal.fire({
+            title: 'Tidak Dapat Mengurangi Jumlah Soal',
+            text: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#147D92',
+            cancelButtonColor: '#7890A0',
+            confirmButtonText: 'Ke Bank Soal',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            focusConfirm: true,
+            customClass: {
+              popup: 'rounded-[16px] font-sans',
+              confirmButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+              cancelButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+            },
+          });
+
+          if (result.isConfirmed) {
+            window.location.href = '{{ url('/hr/question-bank') }}';
+          }
+        } else {
+          if (confirm(`${message}\n\nKlik OK untuk menuju halaman Bank Soal.`)) {
+            window.location.href = '{{ url('/hr/question-bank') }}';
+          }
+        }
+      },
+
+      async onJumlahSoalChange() {
+        const newVal = Number(this.form.jumlah_soal);
+        if (this.questionsCount > 0 && !isNaN(newVal) && newVal < this.questionsCount) {
+          this.form.jumlah_soal = this.initialJumlahSoal;
+          await this.showQuotaReduceAlert();
+        }
+      },
 
       validate() {
         this.errors = {};
@@ -215,7 +258,16 @@
 
       async submit() {
         this.generalError = '';
-        if (!this.validate() || this.loading) return;
+        if (this.loading) return;
+
+        const newVal = Number(this.form.jumlah_soal);
+        if (this.questionsCount > 0 && !isNaN(newVal) && newVal < this.questionsCount) {
+          this.form.jumlah_soal = this.initialJumlahSoal;
+          await this.showQuotaReduceAlert();
+          return;
+        }
+
+        if (!this.validate()) return;
 
         this.loading = true;
         try {
@@ -241,6 +293,15 @@
           const data = await res.json().catch(() => ({}));
 
           if (res.status === 422) {
+            if (data.error_code === 'quota_below_existing_questions') {
+              if (data.questions_count) {
+                this.questionsCount = Number(data.questions_count);
+              }
+              this.form.jumlah_soal = this.initialJumlahSoal;
+              await this.showQuotaReduceAlert(data.message);
+              return;
+            }
+
             this.errors = Object.fromEntries(
               Object.entries(data.errors || {}).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
             );

@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\AuditLog;
 use App\Models\QuestionCategory;
+use App\Models\QuestionOption;
+use App\Models\Question;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -277,5 +279,60 @@ class KategoriSoalTest extends TestCase
 
         $this->assertNotNull($deleteAuditLog);
         $this->assertSame('Menghapus kategori soal: Kategori Dihapus', $deleteAuditLog->description);
+    }
+
+    public function test_question_bank_dropdown_displays_categories_from_database(): void
+    {
+        QuestionCategory::create([
+            'name'            => 'Penalaran Numerik Lanjutan',
+            'type'            => 'multiple_choice',
+            'total_questions' => 10,
+            'is_active'       => true,
+            'created_by'      => $this->hrAdmin->id,
+        ]);
+
+        $response = $this->actingAs($this->hrAdmin)->get('/hr/question-bank');
+
+        $response->assertStatus(200);
+        $response->assertSee('Semua kategori');
+        $response->assertSee('Penalaran Numerik Lanjutan');
+    }
+
+    public function test_deleting_category_with_questions_also_deletes_all_its_questions_in_question_bank(): void
+    {
+        $cat = QuestionCategory::create([
+            'name'            => 'Kategori Dengan Soal',
+            'type'            => 'multiple_choice',
+            'total_questions' => 2,
+            'is_active'       => true,
+            'created_by'      => $this->hrAdmin->id,
+        ]);
+
+        $question = Question::create([
+            'category_id'   => $cat->id,
+            'type'          => 'multiple_choice',
+            'question_text' => 'Soal di dalam kategori',
+            'max_score'     => 10,
+            'status'        => 'active',
+            'created_by'    => $this->hrAdmin->id,
+        ]);
+
+        QuestionOption::create([
+            'question_id' => $question->id,
+            'option_text' => 'Opsi A',
+            'is_correct'  => true,
+            'order'       => 1,
+        ]);
+
+        $response = $this->actingAs($this->hrAdmin)->deleteJson('/api/question-categories/' . $cat->id);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+            ]);
+
+        $this->assertDatabaseMissing('question_categories', ['id' => $cat->id]);
+        $this->assertDatabaseMissing('questions', ['id' => $question->id]);
+        $this->assertDatabaseMissing('question_options', ['question_id' => $question->id]);
     }
 }

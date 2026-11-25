@@ -456,7 +456,58 @@
         return `${day} ${month} ${year}`;
       },
       async deleteCategory(cat) {
-        if (!confirm(`Apakah Anda yakin ingin menghapus kategori '${cat.name}'?`)) return;
+        let isConfirmed = false;
+        const questionsCount = Number(cat.questions_count || 0);
+
+        if (typeof Swal !== 'undefined') {
+          const result = await Swal.fire({
+            title: 'Hapus Kategori Soal?',
+            text: `Apakah Anda yakin ingin menghapus kategori "${cat.name}"? Tindakan ini tidak dapat dibatalkan.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#E53E3E',
+            cancelButtonColor: '#7890A0',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            focusCancel: true,
+            customClass: {
+              popup: 'rounded-[16px] font-sans',
+              confirmButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+              cancelButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+            },
+          });
+          isConfirmed = result.isConfirmed;
+
+          if (isConfirmed && questionsCount > 0) {
+            const warnResult = await Swal.fire({
+              title: 'Peringatan Hapus Bank Soal!',
+              text: `Menghapus kategori "${cat.name}" akan langsung menghapus semua bank soal (${questionsCount} soal) yang terdapat pada kategori ${cat.name}. Apakah Anda yakin ingin melanjutkan?`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#E53E3E',
+              cancelButtonColor: '#7890A0',
+              confirmButtonText: 'Ya, Hapus Semua',
+              cancelButtonText: 'Batal',
+              reverseButtons: true,
+              focusCancel: true,
+              customClass: {
+                popup: 'rounded-[16px] font-sans',
+                confirmButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+                cancelButton: 'rounded-[8px] font-medium text-sm px-4 py-2',
+              },
+            });
+            isConfirmed = warnResult.isConfirmed;
+          }
+        } else {
+          isConfirmed = confirm(`Apakah Anda yakin ingin menghapus kategori "${cat.name}"?`);
+          if (isConfirmed && questionsCount > 0) {
+            isConfirmed = confirm(`Peringatan: Menghapus kategori "${cat.name}" akan langsung menghapus semua bank soal (${questionsCount} soal) yang terdapat pada kategori ${cat.name}. Lanjutkan?`);
+          }
+        }
+
+        if (!isConfirmed) return;
+
         try {
           const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
           const res = await fetch(`{{ url('/api/question-categories') }}/${cat.id}`, {
@@ -471,13 +522,44 @@
           });
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
-            this.showToast({ type: 'success', message: data.message || 'Kategori soal berhasil dihapus.' });
+            const successMsg = data.message || 'Kategori soal berhasil dihapus.';
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                title: 'Berhasil!',
+                text: successMsg,
+                icon: 'success',
+                confirmButtonColor: '#147D92',
+                timer: 2000,
+                showConfirmButton: false,
+              });
+            }
+            this.showToast({ type: 'success', message: successMsg });
             this.fetchCategories(this.meta.current_page);
           } else {
-            this.showToast({ type: 'error', message: data.message || 'Gagal menghapus kategori.' });
+            const errorMsg = data.message || 'Gagal menghapus kategori.';
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                title: 'Gagal!',
+                text: errorMsg,
+                icon: 'error',
+                confirmButtonColor: '#147D92',
+              });
+            } else {
+              this.showToast({ type: 'error', message: errorMsg });
+            }
           }
         } catch (e) {
-          this.showToast({ type: 'error', message: 'Terjadi kesalahan koneksi.' });
+          const connError = 'Terjadi kesalahan koneksi.';
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              title: 'Terjadi Kesalahan!',
+              text: connError,
+              icon: 'error',
+              confirmButtonColor: '#147D92',
+            });
+          } else {
+            this.showToast({ type: 'error', message: connError });
+          }
         }
       },
       get pages() {

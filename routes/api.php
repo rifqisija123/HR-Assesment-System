@@ -5,6 +5,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\ActivityHistoryController;
 use App\Http\Controllers\KategoriSoalController;
+use App\Http\Controllers\BankSoalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -38,12 +39,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/activity-logs/{id}', [ActivityHistoryController::class, 'show']);
     });
 
-    // ── HR Admin: Kategori Soal
+    // ── HR Admin: Kategori Soal & Bank Soal
     Route::middleware('role:hr_admin,super_admin')->group(function () {
         Route::get('/question-categories', [KategoriSoalController::class, 'index'])->name('api.question-categories.index');
         Route::post('/question-categories', [KategoriSoalController::class, 'store'])->name('api.question-categories.store');
         Route::get('/question-categories/{id}', [KategoriSoalController::class, 'show'])->name('api.question-categories.show');
         Route::put('/question-categories/{id}', [KategoriSoalController::class, 'update'])->name('api.question-categories.update');
         Route::delete('/question-categories/{id}', [KategoriSoalController::class, 'destroy'])->name('api.question-categories.destroy');
+
+        Route::get('/question-bank', [BankSoalController::class, 'index'])->name('api.question-bank.index');
+        Route::post('/question-bank', [BankSoalController::class, 'store'])->name('api.question-bank.store');
+        Route::delete('/question-bank/bulk-delete', [BankSoalController::class, 'bulkDestroy'])->name('api.question-bank.bulk-destroy');
+        Route::get('/question-bank/{id}', [BankSoalController::class, 'show'])->name('api.question-bank.show');
+        Route::put('/question-bank/{id}', [BankSoalController::class, 'update'])->name('api.question-bank.update');
+        Route::delete('/question-bank/{id}', [BankSoalController::class, 'destroy'])->name('api.question-bank.destroy');
     });
 });

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\QuestionCategory;
 use App\Models\User;
+use App\Models\QuestionOption;
 use App\Services\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +30,7 @@ class KategoriSoalController extends Controller
             $term = '%' . trim($request->search) . '%';
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
-                  ->orWhere('description', 'like', $term);
+                ->orWhere('description', 'like', $term);
             });
         }
 
@@ -112,12 +113,13 @@ class KategoriSoalController extends Controller
         $category = QuestionCategory::withCount('questions')->findOrFail($id);
 
         $categoryData = [
-            'id'            => $category->id,
-            'nama_kategori' => $category->name,
-            'deskripsi'     => $category->description ?? '',
-            'jumlah_soal'   => $category->total_questions ?? 0,
-            'tipe'          => $category->type === 'essay' ? 'essay' : 'pilihan_ganda',
-            'status'        => $category->is_active ? 'aktif' : 'nonaktif',
+            'id'              => $category->id,
+            'nama_kategori'   => $category->name,
+            'deskripsi'       => $category->description ?? '',
+            'jumlah_soal'     => $category->total_questions ?? 0,
+            'questions_count' => (int) ($category->questions_count ?? $category->questions()->count()),
+            'tipe'            => $category->type === 'essay' ? 'essay' : 'pilihan_ganda',
+            'status'          => $category->is_active ? 'aktif' : 'nonaktif',
         ];
 
         return view('HRAdmin.QuestionCategory.EditKategori', compact('category', 'categoryData'));
@@ -238,6 +240,23 @@ class KategoriSoalController extends Controller
             'status.in'              => 'Status kategori tidak valid.',
         ]);
 
+        $existingQuestionsCount = $category->questions()->count();
+        $newTotalQuestions = isset($validated['jumlah_soal']) ? (int) $validated['jumlah_soal'] : (int) $category->total_questions;
+
+        if ($existingQuestionsCount > 0 && $newTotalQuestions < $existingQuestionsCount) {
+            $msg = "Tidak dapat mengurangi jumlah soal menjadi {$newTotalQuestions} karena kategori \"{$category->name}\" sudah memiliki {$existingQuestionsCount} soal di Bank Soal. Harap hapus soal di Bank Soal terlebih dahulu.";
+            if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                return response()->json([
+                    'success'         => false,
+                    'error_code'      => 'quota_below_existing_questions',
+                    'questions_count' => $existingQuestionsCount,
+                    'message'         => $msg,
+                    'errors'          => ['jumlah_soal' => [$msg]],
+                ], 422);
+            }
+            return back()->withErrors(['jumlah_soal' => $msg]);
+        }
+
         $oldValues = [
             'entity_code'     => "ID: #CAT-{$category->id}",
             'name'            => $category->name,
@@ -284,27 +303,21 @@ class KategoriSoalController extends Controller
     }
 
     /**
-     * Hapus kategori soal jika tidak memiliki soal aktif.
+     * Hapus kategori soal beserta seluruh soal yang ada di dalam kategori tersebut.
      */
     public function destroy(Request $request, int|string $id): RedirectResponse|JsonResponse
     {
-        $category = QuestionCategory::findOrFail($id);
-
-        if ($category->questions()->exists()) {
-            $msg = 'Kategori tidak dapat dihapus karena masih memiliki soal di Bank Soal.';
-            if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => $msg], 422);
-            }
-            return back()->with('error', $msg);
-        }
+        $category = QuestionCategory::withCount('questions')->findOrFail($id);
+        $deletedQuestionsCount = (int) $category->questions_count;
 
         $oldValues = [
-            'entity_code'     => "ID: #CAT-{$category->id}",
-            'name'            => $category->name,
-            'deskripsi'       => $category->description,
-            'type'            => $category->type,
-            'total_questions' => $category->total_questions,
-            'status'          => $category->is_active ? 'aktif' : 'nonaktif',
+            'entity_code'             => "ID: #CAT-{$category->id}",
+            'name'                    => $category->name,
+            'deskripsi'               => $category->description,
+            'type'                    => $category->type,
+            'total_questions'         => $category->total_questions,
+            'deleted_questions_count' => $deletedQuestionsCount,
+            'status'                  => $category->is_active ? 'aktif' : 'nonaktif',
         ];
         $name = $category->name;
 
@@ -314,22 +327,34 @@ class KategoriSoalController extends Controller
             auditable: $category,
             oldValues: $oldValues,
             newValues: [
-                'entity_code' => "ID: #CAT-{$category->id}",
+                'entity_code'             => "ID: #CAT-{$category->id}",
+                'deleted_questions_count' => $deletedQuestionsCount,
             ],
             request: $request
         );
 
-        $category->delete();
+        DB::transaction(function () use ($category) {
+            $questionIds = $category->questions()->pluck('id');
+            if ($questionIds->isNotEmpty()) {
+                QuestionOption::whereIn('question_id', $questionIds)->delete();
+                $category->questions()->delete();
+            }
+            $category->delete();
+        });
+
+        $successMessage = $deletedQuestionsCount > 0
+            ? "Kategori soal beserta {$deletedQuestionsCount} soal di Bank Soal berhasil dihapus."
+            : 'Kategori soal berhasil dihapus.';
 
         if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Kategori soal berhasil dihapus.',
+                'message' => $successMessage,
             ]);
         }
 
         return redirect('/hr/question-categories')
-            ->with('success', 'Kategori soal berhasil dihapus.');
+            ->with('success', $successMessage);
     }
 }
 

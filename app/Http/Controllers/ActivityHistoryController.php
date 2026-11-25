@@ -173,12 +173,19 @@ class ActivityHistoryController extends Controller
         $created     = $log->created_at ? Carbon::parse($log->created_at)->setTimezone($tz) : now($tz);
         $created->locale('id');
 
+        $routePath = $log->route_path;
+        $newValues = $log->new_values;
+        if (is_array($newValues) && empty($newValues['path']) && $routePath) {
+            $newValues['path'] = $routePath;
+        }
+
         $data = [
             'id'          => $log->id,
             'action'      => $log->action,
             'action_label'=> $actionStyle['label'],
             'action_style'=> $actionStyle,
             'description' => $log->description,
+            'route_path'  => $routePath,
 
             'entity_type' => $log->entity_type_label,
             'entity_id'   => $log->entity_identifier,
@@ -207,7 +214,7 @@ class ActivityHistoryController extends Controller
             ],
 
             'old_values'  => $log->old_values,
-            'new_values'  => $log->new_values,
+            'new_values'  => $newValues,
         ];
 
         return $data;

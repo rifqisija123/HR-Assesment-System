@@ -17,6 +17,9 @@
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <!-- Alpine Core -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body class="antialiased bg-[#F7F9FC]">
     {{-- Sidebar: fixed kiri --}}
@@ -146,7 +149,7 @@
           </div>
 
           <!-- Dropdown Menu -->
-          <div x-show="open" x-collapse @click.outside="open = false" class="mt-1.5 overflow-hidden">
+          <div x-cloak style="display: none;" x-show="open" x-collapse @click.outside="open = false" class="mt-1.5 overflow-hidden">
             <form action="{{ route('logout') }}">
               @csrf
               <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left hover:bg-[#1D4C63] transition-colors cursor-pointer">

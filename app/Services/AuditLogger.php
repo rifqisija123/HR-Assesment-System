@@ -34,6 +34,10 @@ class AuditLogger
             }
         }
         $payload['description'] = $description;
+        if (empty($payload['path']) && $request) {
+            $reqPath = trim($request->path(), '/');
+            $payload['path'] = $reqPath === '' ? '/' : '/' . $reqPath;
+        }
 
         $userId = null;
         if ($user instanceof Authenticatable) {
